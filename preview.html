@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Smart Gate Dashboard</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+  <style>
+
+    *{
+      margin:0;
+      padding:0;
+      box-sizing:border-box;
+      font-family:'Poppins',sans-serif;
+    }
+
+    body{
+      background:#f4f7fb;
+      color:#222;
+    }
+
+    header{
+      background:white;
+      padding:20px 40px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      box-shadow:0 2px 10px rgba(0,0,0,0.05);
+    }
+
+    .title{
+      font-size:28px;
+      font-weight:600;
+      color:#2563eb;
+    }
+
+    .status-online{
+      color:green;
+      font-weight:500;
+    }
+
+    .dashboard{
+      padding:30px;
+      display:grid;
+      grid-template-columns:2fr 1fr;
+      gap:25px;
+    }
+
+    .card{
+      background:white;
+      border-radius:18px;
+      padding:25px;
+      box-shadow:0 4px 15px rgba(0,0,0,0.06);
+    }
+
+    .card h2{
+      margin-bottom:20px;
+      font-size:22px;
+      color:#111827;
+    }
+
+    .gate-area{
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      height:350px;
+    }
+
+    .gate-stand{
+      width:18px;
+      height:160px;
+      background:#444;
+      position:relative;
+    }
+
+    .gate-bar{
+      width:180px;
+      height:14px;
+      background:red;
+      position:absolute;
+      top:10px;
+      left:0;
+      transform-origin:left center;
+      transition:1s ease;
+    }
+
+    .open{
+      transform:rotate(-70deg);
+      background:green;
+    }
+
+    .status-box{
+      margin-top:40px;
+      padding:14px 24px;
+      border-radius:12px;
+      font-size:20px;
+      font-weight:600;
+      background:#e5e7eb;
+    }
+
+    .sensor{
+      margin-top:25px;
+      text-align:center;
+    }
+
+    .sensor-circle{
+      width:120px;
+      height:120px;
+      border-radius:50%;
+      background:#d1fae5;
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      margin:auto;
+      font-size:20px;
+      font-weight:bold;
+      color:green;
+    }
+
+    .vehicle-detected{
+      background:#fee2e2;
+      color:red;
+    }
+
+    button{
+      margin-top:30px;
+      padding:14px 28px;
+      border:none;
+      background:#2563eb;
+      color:white;
+      border-radius:10px;
+      font-size:16px;
+      cursor:pointer;
+      transition:0.3s;
+    }
+
+    button:hover{
+      background:#1d4ed8;
+    }
+
+    .log-box{
+      height:350px;
+      overflow:auto;
+    }
+
+    .log-item{
+      padding:12px;
+      margin-bottom:10px;
+      background:#f3f4f6;
+      border-radius:10px;
+      font-size:14px;
+    }
+
+    .timer{
+      margin-top:20px;
+      font-size:18px;
+      font-weight:500;
+      color:#2563eb;
+    }
+
+    @media(max-width:768px){
+
+      .dashboard{
+        grid-template-columns:1fr;
+      }
+
+    }
+
+  </style>
+</head>
+
+<body>
+
+<header>
+
+  <div class="title">Smart Gate Dashboard</div>
+
+  <div class="status-online">
+    ● System Online
+  </div>
+
+</header>
+
+<div class="dashboard">
+
+  <!-- LEFT SECTION -->
+  <div class="card">
+
+    <h2>Gate Control System</h2>
+
+    <div class="gate-area">
+
+      <div class="gate-stand">
+
+        <div class="gate-bar" id="gateBar"></div>
+
+      </div>
+
+      <div class="status-box" id="gateStatus">
+        Gate Closed
+      </div>
+
+      <div class="timer" id="timerText">
+        Waiting for vehicle...
+      </div>
+
+      <button onclick="simulateVehicle()">
+        Simulate Vehicle Detection
+      </button>
+
+    </div>
+
+  </div>
+
+  <!-- RIGHT SECTION -->
+  <div class="card">
+
+    <h2>Sensor Monitoring</h2>
+
+    <div class="sensor">
+
+      <div class="sensor-circle" id="sensorCircle">
+        CLEAR
+      </div>
+
+      <p style="margin-top:15px;">
+        HC-SR04 Distance Sensor
+      </p>
+
+    </div>
+
+    <div style="margin-top:40px;">
+
+      <h2 style="font-size:20px;">Live Activity Log</h2>
+
+      <div class="log-box" id="logBox">
+
+        <div class="log-item">
+          System initialized successfully
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+
+  const gateBar = document.getElementById("gateBar");
+  const gateStatus = document.getElementById("gateStatus");
+  const sensorCircle = document.getElementById("sensorCircle");
+  const logBox = document.getElementById("logBox");
+  const timerText = document.getElementById("timerText");
+
+  function addLog(message){
+
+    const log = document.createElement("div");
+
+    log.classList.add("log-item");
+
+    log.innerText =
+      new Date().toLocaleTimeString() + " - " + message;
+
+    logBox.prepend(log);
+
+  }
+
+  function simulateVehicle(){
+
+    sensorCircle.innerText = "DETECTED";
+    sensorCircle.classList.add("vehicle-detected");
+
+    gateStatus.innerText = "Gate Opening...";
+
+    addLog("Vehicle detected");
+
+    setTimeout(()=>{
+
+      gateBar.classList.add("open");
+
+      gateStatus.innerText = "Gate Open";
+
+      addLog("Gate opened");
+
+      let count = 5;
+
+      timerText.innerText =
+        "Closing in " + count + " seconds";
+
+      const countdown = setInterval(()=>{
+
+        count--;
+
+        timerText.innerText =
+          "Closing in " + count + " seconds";
+
+        if(count <= 0){
+
+          clearInterval(countdown);
+
+          gateStatus.innerText = "Gate Closing...";
+
+          addLog("Gate closing");
+
+          setTimeout(()=>{
+
+            gateBar.classList.remove("open");
+
+            gateStatus.innerText = "Gate Closed";
+
+            timerText.innerText =
+              "Waiting for vehicle...";
+
+            sensorCircle.innerText = "CLEAR";
+
+            sensorCircle.classList.remove("vehicle-detected");
+
+            addLog("Gate closed");
+
+          },1000);
+
+        }
+
+      },1000);
+
+    },1000);
+
+  }
+
+</script>
+
+</body>
+</html>
