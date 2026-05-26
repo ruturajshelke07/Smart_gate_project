@@ -1,0 +1,148 @@
+#include <Servo.h>
+
+#define TRIG_PIN 9
+#define ECHO_PIN 10
+#define LED_PIN 7
+#define SERVO_PIN 6
+
+Servo gateServo;
+
+bool gateOpen = false;
+bool warningShown = false;
+
+
+
+long getDistance() {
+
+  digitalWrite(TRIG_PIN, LOW);
+  delayMicroseconds(2);
+
+  digitalWrite(TRIG_PIN, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(TRIG_PIN, LOW);
+
+  long duration = pulseIn(ECHO_PIN, HIGH);
+
+  long distance = duration * 0.034 / 2;
+
+  return distance;
+}
+
+
+void blinkLED() {
+
+  digitalWrite(LED_PIN, HIGH);
+  delay(50);
+
+  digitalWrite(LED_PIN, LOW);
+  delay(50);
+}
+
+
+void openGate() {
+
+  Serial.println("Opening Gate...");
+
+  for (int pos = 0; pos <= 90; pos += 2) {
+
+    gateServo.write(pos);
+
+    blinkLED();
+  }
+
+  Serial.println("Gate Opened");
+}
+
+
+void closeGate() {
+
+  Serial.println("Closing Gate...");
+
+  for (int pos = 90; pos >= 0; pos -= 2) {
+
+    gateServo.write(pos);
+
+    blinkLED();
+  }
+
+  Serial.println("Gate Closed");
+}
+
+
+
+
+void setup() {
+
+  pinMode(TRIG_PIN, OUTPUT);
+  pinMode(ECHO_PIN, INPUT);
+
+  pinMode(LED_PIN, OUTPUT);
+
+  gateServo.attach(SERVO_PIN);
+
+  // Start with gate closed
+  gateServo.write(0);
+
+  Serial.begin(9600);
+
+  Serial.println("Smart Gate System Started");
+}
+
+
+
+void loop() {
+
+  long distance = getDistance();
+
+  Serial.print("Distance: ");
+  Serial.print(distance);
+  Serial.println(" cm");
+
+  
+  if (distance < 20 && !gateOpen) {
+
+    Serial.println("Vehicle Detected!");
+
+    openGate();
+
+    gateOpen = true;
+
+    warningShown = false;
+
+    // Keep gate open for 5 seconds
+    delay(5000);
+  }
+
+  
+  if (gateOpen) {
+
+    distance = getDistance();
+
+    // Path Clear -> Close Gate
+    if (distance > 20) {
+
+      Serial.println("Path Clear");
+
+      closeGate();
+
+      gateOpen = false;
+
+      warningShown = false;
+    }
+
+    else {
+
+      if (!warningShown) {
+
+        Serial.println("Vehicle Still Present - Gate Remains Open");
+
+        warningShown = true;
+      }
+
+      // Check again after 1 second
+      delay(1000);
+    }
+  }
+
+  delay(200);
+}
